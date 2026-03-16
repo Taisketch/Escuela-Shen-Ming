@@ -115,21 +115,26 @@
           return claseBase;
         };
 
-        if (diasAsinc.length >= 2) clases[diasAsinc[1]] = crearClaseBase();
-
-        if (month === 0) {
-          if (curso === 'primerAno') {
-            clases[16] = { tipo: 'Presencial', horario: '10:00 - 14:00 hrs' };
-          } else {
-            clases[16] = crearClaseBase();
-          }
+        if (month === 3 && curso === 'primerAno') {
+          clases[16] = crearClaseBase();
+          clases[30] = crearClaseBase();
         } else {
-          if (diasAsinc.length >= 4) clases[diasAsinc[3]] = crearClaseBase();
+          if (diasAsinc.length >= 2) clases[diasAsinc[1]] = crearClaseBase();
+
+          if (month === 0) {
+            if (curso === 'primerAno') {
+              clases[16] = { tipo: 'Presencial', horario: '10:00 - 14:00 hrs' };
+            } else {
+              clases[16] = crearClaseBase();
+            }
+          } else {
+            if (diasAsinc.length >= 4) clases[diasAsinc[3]] = crearClaseBase();
+          }
         }
       } else {
         if (month === 3) {
-          clases[9] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
-          clases[23] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
+          clases[8] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
+          clases[22] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
         } else if (month === 4) {
           clases[7] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Juan Pablo Massimino' };
           clases[14] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Juan Pablo Massimino' };
