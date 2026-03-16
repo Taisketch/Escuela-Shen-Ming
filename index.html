@@ -1,13 +1,543 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Escuela Shen Ming - Acupuntura Clásica</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendario Escuela Shen Ming</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script>
+    // Datos de feriados chilenos 2026-2027 actualizados con motivos
+    const feriadosChile = {
+      '2026-3': [{ dia: 3, motivo: 'Viernes Santo' }, { dia: 4, motivo: 'Sábado Santo' }],
+      '2026-4': [{ dia: 1, motivo: 'Día del Trabajo' }, { dia: 21, motivo: 'Día de las Glorias Navales' }],
+      '2026-5': [{ dia: 21, motivo: 'Día Nacional de los Pueblos Indígenas' }, { dia: 29, motivo: 'San Pedro y San Pablo' }],
+      '2026-6': [{ dia: 16, motivo: 'Día de la Virgen del Carmen' }],
+      '2026-7': [{ dia: 15, motivo: 'Asunción de la Virgen' }],
+      '2026-8': [{ dia: 18, motivo: 'Independencia Nacional' }, { dia: 19, motivo: 'Día de las Glorias del Ejército' }],
+      '2026-9': [{ dia: 12, motivo: 'Encuentro de Dos Mundos' }, { dia: 31, motivo: 'Día de las Iglesias Evangélicas y Protestantes' }],
+      '2026-10': [{ dia: 1, motivo: 'Día de Todos los Santos' }],
+      '2026-11': [{ dia: 8, motivo: 'Inmaculada Concepción' }, { dia: 25, motivo: 'Navidad' }],
+      '2027-0': [{ dia: 1, motivo: 'Año Nuevo' }]
+    };
+
+    // Generar meses del año escolar (Abril 2026 a Enero 2027)
+    const mesesEscolares = [
+      { year: 2026, month: 3, name: 'Abril' },
+      { year: 2026, month: 4, name: 'Mayo' },
+      { year: 2026, month: 5, name: 'Junio' },
+      { year: 2026, month: 6, name: 'Julio' },
+      { year: 2026, month: 7, name: 'Agosto' },
+      { year: 2026, month: 8, name: 'Septiembre' },
+      { year: 2026, month: 9, name: 'Octubre' },
+      { year: 2026, month: 10, name: 'Noviembre' },
+      { year: 2026, month: 11, name: 'Diciembre' },
+      { year: 2027, month: 0, name: 'Enero' }
+    ];
+
+    const diasSemana = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
+
+    // Estado de la aplicación
+    let vistaActual = 'inicio';
+    let diaSeleccionado = null;
+    let sedeActual = 'Temuco';
+    let mapDias = {}; // Almacena la información de los días interactivos
+
+    // Funciones de actualización de estado
+    function setVistaActual(vista, sede = 'Temuco') {
+      vistaActual = vista;
+      sedeActual = sede;
+      diaSeleccionado = null;
+      render();
+    }
+
+    function setSedeActual(sede) {
+      sedeActual = sede;
+      diaSeleccionado = null;
+      render();
+    }
+
+    function setDiaSeleccionado(idDia) {
+      if (!idDia) {
+        diaSeleccionado = null;
+      } else {
+        diaSeleccionado = mapDias[idDia];
+      }
+      render();
+    }
+
+    // Lógica para calcular clases
+    const obtenerClases = (year, month, curso, sede) => {
+      const clases = {};
+      const diasEnMes = new Date(year, month + 1, 0).getDate();
+
+      let presencialHorario = curso === 'segundoAno' ? '15:00 - 19:00 hrs' : '10:00 - 14:00 hrs';
+      let presencialDocente = null;
+
+      if (curso === 'segundoAno') {
+        if (sede === 'Los Ángeles') {
+          presencialHorario = '09:30 - 13:30 hrs';
+          presencialDocente = 'Guillermo Sepulveda';
+        } else if (sede === 'Osorno') {
+          presencialHorario = '10:00 - 14:00 hrs';
+          presencialDocente = 'Javiera Stuckrath';
+        }
+      } else if (curso === 'tercerAno') {
+        if (sede === 'Los Ángeles') {
+          presencialHorario = '09:30 - 13:30 hrs';
+          presencialDocente = 'Guillermo Sepulveda';
+        }
+      }
+
+      const presencialDiaSemana = curso === 'tercerAno' ? 0 : 6;
+
+      if (curso !== 'tercerAno') {
+        const asincDiaSemana = curso === 'primerAno' ? 4 : 2;
+        const diasAsinc = [];
+        for (let i = 1; i <= diasEnMes; i++) {
+          let fecha = new Date(year, month, i);
+          if (fecha.getDay() === asincDiaSemana) {
+            diasAsinc.push(i);
+          }
+        }
+
+        const nombreClase = 'Online';
+        const docenteClase = curso === 'primerAno' ? 'Eduardo Lagos' : 'Adriana Perissé';
+
+        const crearClaseBase = () => {
+          const claseBase = { tipo: nombreClase, horario: '20:00 - 21:30 hrs' };
+          if (docenteClase) claseBase.docente = docenteClase;
+          return claseBase;
+        };
+
+        if (diasAsinc.length >= 2) clases[diasAsinc[1]] = crearClaseBase();
+
+        if (month === 0) {
+          if (curso === 'primerAno') {
+            clases[16] = { tipo: 'Presencial', horario: '10:00 - 14:00 hrs' };
+          } else {
+            clases[16] = crearClaseBase();
+          }
+        } else {
+          if (diasAsinc.length >= 4) clases[diasAsinc[3]] = crearClaseBase();
+        }
+      } else {
+        if (month === 3) {
+          clases[9] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
+          clases[23] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
+        } else if (month === 4) {
+          clases[7] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Juan Pablo Massimino' };
+          clases[14] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Juan Pablo Massimino' };
+          clases[28] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Juan Pablo Massimino' };
+        } else if (month === 5) {
+          clases[4] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Juan Pablo Massimino' };
+          clases[10] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Sebastián Reyes' };
+          clases[17] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Sebastián Reyes' };
+          clases[24] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Sebastián Reyes' };
+        } else if (month >= 6 && month <= 11) {
+          const diasJueves = [];
+          for (let i = 1; i <= diasEnMes; i++) {
+            let fecha = new Date(year, month, i);
+            if (fecha.getDay() === 4) {
+              diasJueves.push(i);
+            }
+          }
+
+          if (diasJueves.length >= 2) clases[diasJueves[1]] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
+
+          if (diasJueves.length >= 4) {
+            const diaCuartoJueves = diasJueves[3];
+            if (!(month === 11 && diaCuartoJueves === 24)) {
+              clases[diaCuartoJueves] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
+            }
+          }
+        }
+
+        if ((year === 2026 && month >= 8) || (year === 2027 && month === 0)) {
+          const feriadosMes = feriadosChile[`${year}-${month}`] || [];
+          for (let i = 1; i <= diasEnMes; i++) {
+            let fecha = new Date(year, month, i);
+            if (fecha.getDay() === 6) {
+              if (year === 2026 && month === 8 && i !== 5 && i !== 12 && i < 26) continue;
+              if (year === 2027 && month === 0 && i > 9) continue;
+              if (year === 2026 && month === 11 && i === 26) continue;
+
+              const esFeriado = feriadosMes.some(f => f.dia === i);
+              if (esFeriado) continue;
+
+              clases[i] = { tipo: 'Práctica Clínica', horario: '14:00 - 19:00 hrs', docente: 'Eduardo Lagos' };
+            }
+          }
+        }
+      }
+
+      if (month !== 0) {
+        let ultimoDiaPresencial = 0;
+
+        if (curso === 'tercerAno' && month >= 8) {
+          ultimoDiaPresencial = 0;
+        } else if (curso === 'tercerAno' && sede === 'Los Ángeles') {
+          if (month === 4) { ultimoDiaPresencial = 24; }
+          else if (month === 7) { ultimoDiaPresencial = 23; }
+          else {
+            let count = 0;
+            for (let i = 1; i <= diasEnMes; i++) {
+              let fecha = new Date(year, month, i);
+              if (fecha.getDay() === 0) {
+                count++;
+                if (count === 3) { ultimoDiaPresencial = i; break; }
+              }
+            }
+          }
+        } else if (curso === 'tercerAno' && sede === 'Osorno') {
+          for (let i = diasEnMes; i >= 1; i--) {
+            let fecha = new Date(year, month, i);
+            if (fecha.getDay() === 6) { ultimoDiaPresencial = i; break; }
+          }
+        } else if (curso === 'segundoAno' && sede === 'Los Ángeles') {
+          if (month === 8) { ultimoDiaPresencial = 12; }
+          else if (month === 4) { ultimoDiaPresencial = 23; }
+          else if (month === 7) { ultimoDiaPresencial = 22; }
+          else {
+            let count = 0;
+            for (let i = 1; i <= diasEnMes; i++) {
+              let fecha = new Date(year, month, i);
+              if (fecha.getDay() === 6) {
+                count++;
+                if (count === 3) { ultimoDiaPresencial = i; break; }
+              }
+            }
+          }
+        } else if (curso === 'segundoAno' && sede === 'Osorno') {
+          if (month === 8) { ultimoDiaPresencial = 12; }
+          else if (month === 4) { ultimoDiaPresencial = 23; }
+          else if (month === 7) { ultimoDiaPresencial = 22; }
+          else {
+            let count = 0;
+            for (let i = 1; i <= diasEnMes; i++) {
+              let fecha = new Date(year, month, i);
+              if (fecha.getDay() === 6) {
+                count++;
+                if (count === 3) { ultimoDiaPresencial = i; break; }
+              }
+            }
+          }
+        } else {
+          if (month === 11) {
+            ultimoDiaPresencial = 19;
+          } else if (month === 9) {
+            ultimoDiaPresencial = 24;
+          } else {
+            for (let i = diasEnMes; i >= 1; i--) {
+              let fecha = new Date(year, month, i);
+              if (fecha.getDay() === presencialDiaSemana) {
+                ultimoDiaPresencial = i;
+                break;
+              }
+            }
+          }
+        }
+
+        if (ultimoDiaPresencial > 0) {
+          const clasePresencial = { tipo: 'Presencial', horario: presencialHorario };
+          if (presencialDocente) { clasePresencial.docente = presencialDocente; }
+          clases[ultimoDiaPresencial] = clasePresencial;
+        }
+      } else {
+        if (curso === 'tercerAno') {
+          const clasePresencialEnero = { tipo: 'Presencial', horario: presencialHorario };
+          if (presencialDocente) { clasePresencialEnero.docente = presencialDocente; }
+          clases[17] = clasePresencialEnero;
+        }
+      }
+
+      return clases;
+    };
+
+    // Función para renderizar un mes individual
+    function renderizarCalendarioMes(year, month, monthName, curso, sede) {
+      const primerDiaMes = new Date(year, month, 1).getDay();
+      const diasEnMes = new Date(year, month + 1, 0).getDate();
+
+      let offset = primerDiaMes === 0 ? 6 : primerDiaMes - 1;
+
+      const feriadosMes = feriadosChile[`${year}-${month}`] || [];
+      const clasesMes = obtenerClases(year, month, curso, sede);
+
+      let diasHtml = '';
+
+      for (let i = 0; i < offset; i++) {
+        diasHtml += `<div class="p-2"></div>`;
+      }
+
+      for (let d = 1; d <= diasEnMes; d++) {
+        const feriadoInfo = feriadosMes.find(f => f.dia === d);
+        const esFeriado = !!feriadoInfo;
+        const clase = clasesMes[d];
+
+        let colorFondo = "bg-white";
+        let colorTexto = "text-gray-800";
+        let border = "border-gray-200";
+
+        if (esFeriado && !clase) {
+          colorFondo = "bg-red-500";
+          colorTexto = "text-white";
+          border = "border-red-600";
+        } else if (clase && !esFeriado) {
+          colorFondo = "bg-blue-500";
+          colorTexto = "text-white";
+          border = "border-blue-600";
+        } else if (esFeriado && clase) {
+          colorFondo = "bg-gradient-to-br from-red-500 to-blue-500";
+          colorTexto = "text-white";
+          border = "border-purple-600";
+        }
+
+        let idDia = `${year}-${month}-${d}`;
+        let onClickAttr = '';
+        let cursorClass = '';
+        let subtitulo = '';
+
+        if (clase || esFeriado) {
+          mapDias[idDia] = { dia: d, mes: monthName, year, clase, feriado: feriadoInfo };
+          onClickAttr = `onclick="setDiaSeleccionado('${idDia}')"`;
+          cursorClass = 'cursor-pointer hover:opacity-80 transition-opacity';
+        }
+
+        if (clase) {
+          const tipoAbreviado = clase.tipo === 'Presencial' ? 'Pres' : (clase.tipo === 'Online' ? 'Online' : (clase.tipo === 'Práctica Clínica' ? 'Práctica' : 'Asinc'));
+          subtitulo = `<span class="text-[10px] leading-tight mt-0.5 opacity-90">${tipoAbreviado}</span>`;
+        }
+
+        diasHtml += `
+          <div ${onClickAttr} class="h-12 border ${border} ${colorFondo} ${colorTexto} flex flex-col items-center justify-center rounded shadow-sm text-sm font-medium ${cursorClass}">
+            <span>${d}</span>
+            ${subtitulo}
+          </div>
+        `;
+      }
+
+      const cabeceraDiasHtml = diasSemana.map(d => `<div>${d}</div>`).join('');
+
+      return `
+        <div class="bg-white p-4 rounded-xl shadow-md border border-gray-100">
+          <h3 class="text-lg font-bold text-center mb-4 text-gray-800">${monthName} ${year}</h3>
+          <div class="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold text-gray-500">
+            ${cabeceraDiasHtml}
+          </div>
+          <div class="grid grid-cols-7 gap-1">
+            ${diasHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    // Función principal de renderizado de la interfaz
+    function render() {
+      const root = document.getElementById('root');
+
+      if (vistaActual === 'primerAno' || vistaActual === 'segundoAno' || vistaActual === 'tercerAno') {
+        const titulos = {
+          primerAno: 'Calendario Primer Año',
+          segundoAno: 'Calendario Segundo Año',
+          tercerAno: 'Calendario Tercer Año'
+        };
+        const iconos = { primerAno: '🐎', segundoAno: '🐍', tercerAno: '🐉' };
+        const colores = { primerAno: 'text-amber-600', segundoAno: 'text-emerald-600', tercerAno: 'text-red-600' };
+
+        const tituloCalendario = titulos[vistaActual];
+        const iconoCalendario = iconos[vistaActual];
+        const colorTema = colores[vistaActual];
+
+        let htmlBotonesSedes = `
+          <button onclick="setSedeActual('Temuco')" class="px-3 py-1 border rounded-full text-xs font-bold uppercase tracking-wider shadow-sm transition-colors ${sedeActual === 'Temuco' ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200'}">
+            Temuco
+          </button>
+        `;
+
+        if (vistaActual !== 'primerAno') {
+          htmlBotonesSedes += `
+            <button onclick="setSedeActual('Osorno')" class="px-3 py-1 border rounded-full text-xs font-bold uppercase tracking-wider shadow-sm transition-colors ${sedeActual === 'Osorno' ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200'}">
+              Osorno
+            </button>
+            <button onclick="setSedeActual('Los Ángeles')" class="px-3 py-1 border rounded-full text-xs font-bold uppercase tracking-wider shadow-sm transition-colors ${sedeActual === 'Los Ángeles' ? 'bg-rose-600 text-white border-rose-700' : 'bg-rose-100 text-rose-700 border-rose-200 hover:bg-rose-200'}">
+              Los Ángeles
+            </button>
+          `;
+        }
+
+        let detalleModalHtml = '';
+        if (diaSeleccionado) {
+          let contenidoClaseHtml = '';
+          if (diaSeleccionado.clase) {
+            let docenteHtml = diaSeleccionado.clase.docente ? `<p class="mt-1 text-sm font-medium">Docente: <strong>${diaSeleccionado.clase.docente}</strong></p>` : '';
+            contenidoClaseHtml = `
+              <div class="text-blue-700">
+                <p>Clase ${diaSeleccionado.clase.tipo} - Horario: <strong>${diaSeleccionado.clase.horario}</strong></p>
+                ${docenteHtml}
+              </div>
+            `;
+          }
+
+          let contenidoFeriadoHtml = '';
+          if (diaSeleccionado.feriado) {
+            contenidoFeriadoHtml = `
+              <p class="text-red-700 mt-1">
+                Feriado: <strong>${diaSeleccionado.feriado.motivo}</strong>
+              </p>
+            `;
+          }
+
+          let modalClass = diaSeleccionado.feriado && diaSeleccionado.clase
+            ? 'bg-purple-50 border-purple-500'
+            : diaSeleccionado.feriado
+              ? 'bg-red-50 border-red-500'
+              : 'bg-blue-50 border-blue-500';
+
+          detalleModalHtml = `
+            <div class="mb-8 p-4 border-l-4 rounded-r-lg flex justify-between items-center shadow-sm transition-colors ${modalClass}">
+              <div>
+                <h4 class="font-bold text-gray-800 text-lg mb-1">
+                  ${diaSeleccionado.dia} de ${diaSeleccionado.mes} de ${diaSeleccionado.year}
+                </h4>
+                ${contenidoClaseHtml}
+                ${contenidoFeriadoHtml}
+              </div>
+              <button onclick="setDiaSeleccionado(null)" class="text-gray-500 hover:text-gray-800 font-bold p-2 text-xl">
+                ✕
+              </button>
+            </div>
+          `;
+        }
+
+        const calendariosHtml = mesesEscolares.map(m => renderizarCalendarioMes(m.year, m.month, m.name, vistaActual, sedeActual)).join('');
+
+        root.innerHTML = `
+          <div class="min-h-screen bg-gray-50 p-6 font-sans text-gray-800">
+            <div class="max-w-6xl mx-auto">
+              <div class="flex flex-col md:flex-row items-center justify-center relative mb-8 pb-6 border-b border-gray-200 gap-4 md:gap-0">
+                <button onclick="setVistaActual('inicio')" class="md:absolute md:left-0 self-start md:self-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center gap-2">
+                  <span>←</span> Volver
+                </button>
+                
+                <div class="flex flex-col items-center">
+                  <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-3 text-center mb-3">
+                    <span class="text-3xl ${colorTema} drop-shadow-sm">${iconoCalendario}</span> ${tituloCalendario}
+                  </h1>
+                  
+                  <div class="flex flex-wrap justify-center gap-2 md:gap-3">
+                    ${htmlBotonesSedes}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-center gap-6 mb-8 bg-white py-3 px-6 rounded-full shadow-sm w-fit mx-auto border border-gray-100">
+                <div class="flex items-center gap-2">
+                  <div class="w-4 h-4 rounded bg-red-500"></div>
+                  <span class="text-sm font-medium text-gray-700">Feriado Nacional</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="w-4 h-4 rounded bg-blue-500"></div>
+                  <span class="text-sm font-medium text-gray-700">Día de Clases</span>
+                </div>
+              </div>
+
+              ${detalleModalHtml}
+
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                ${calendariosHtml}
+              </div>
+            </div>
+          </div>
+        `;
+
+      } else {
+        // Vista de Inicio (Cartas estilo Tarot)
+        root.innerHTML = `
+          <div class="min-h-screen flex flex-col items-center py-16 px-4 relative overflow-hidden bg-teal-900" style="background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000&auto=format&fit=crop'); background-size: cover; background-position: center; background-attachment: fixed;">
+            <div class="absolute inset-0 bg-gradient-to-b from-teal-800/40 to-blue-900/50 backdrop-blur-[3px] z-0"></div>
+
+            <div class="z-10 text-center mb-16 mt-8">
+              <h1 class="text-5xl md:text-7xl font-serif text-white tracking-widest mb-4 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">Escuela Shen Ming</h1>
+              <p class="text-teal-100 uppercase tracking-[0.3em] text-sm md:text-base font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Portal Académico 2026-2027</p>
+            </div>
+
+            <div class="z-10 flex flex-wrap justify-center gap-10 w-full max-w-6xl pb-10">
+              
+              <!-- Carta 1er Año -->
+              <div onclick="setVistaActual('primerAno', 'Temuco')" class="relative w-72 h-[480px] bg-gradient-to-b from-teal-900/80 via-slate-900/85 to-blue-950/90 backdrop-blur-sm rounded-xl border border-amber-500/50 flex flex-col items-center justify-between p-6 group cursor-pointer transition-all duration-500 hover:scale-105 hover:-translate-y-4 hover:shadow-[0_0_50px_rgba(217,119,6,0.5)] z-10 hover:z-20">
+                <div class="absolute inset-3 border border-amber-500/30 rounded pointer-events-none group-hover:border-amber-400/70 transition-colors duration-500">
+                   <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-amber-500/60"></div>
+                   <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-amber-500/60"></div>
+                   <div class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-amber-500/60"></div>
+                   <div class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-amber-500/60"></div>
+                </div>
+                
+                <div class="mt-6 text-amber-500/90 font-serif text-3xl tracking-widest font-bold drop-shadow-md">I</div>
+                
+                <div class="text-9xl drop-shadow-[0_0_20px_rgba(217,119,6,0.3)] group-hover:scale-110 transition-transform duration-500 group-hover:drop-shadow-[0_0_40px_rgba(217,119,6,0.6)]">🐎</div>
+                
+                <div class="text-center mb-8 w-full px-4">
+                  <div class="h-px w-full bg-gradient-to-r from-transparent via-amber-600/60 to-transparent mb-5"></div>
+                  <h2 class="text-3xl font-serif text-amber-50 mb-2 tracking-wide drop-shadow-md">Caballo</h2>
+                  <p class="text-amber-400 text-xs tracking-[0.3em] uppercase font-bold">Primer Año</p>
+                </div>
+              </div>
+
+              <!-- Carta 2do Año -->
+              <div onclick="setVistaActual('segundoAno', 'Temuco')" class="relative w-72 h-[480px] bg-gradient-to-b from-emerald-900/80 via-slate-900/85 to-teal-950/90 backdrop-blur-sm rounded-xl border border-emerald-500/50 flex flex-col items-center justify-between p-6 group cursor-pointer transition-all duration-500 hover:scale-105 hover:-translate-y-4 hover:shadow-[0_0_50px_rgba(16,185,129,0.4)] z-10 hover:z-20">
+                <div class="absolute inset-3 border border-emerald-600/30 rounded pointer-events-none group-hover:border-emerald-500/70 transition-colors duration-500">
+                   <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-emerald-600/60"></div>
+                   <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-emerald-600/60"></div>
+                   <div class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-emerald-600/60"></div>
+                   <div class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-emerald-600/60"></div>
+                </div>
+                
+                <div class="mt-6 text-emerald-500/90 font-serif text-3xl tracking-widest font-bold drop-shadow-md">II</div>
+                
+                <div class="text-9xl drop-shadow-[0_0_20px_rgba(16,185,129,0.2)] group-hover:scale-110 transition-transform duration-500 group-hover:drop-shadow-[0_0_40px_rgba(16,185,129,0.5)] grayscale group-hover:grayscale-0">🐍</div>
+                
+                <div class="text-center mb-8 w-full px-4">
+                  <div class="h-px w-full bg-gradient-to-r from-transparent via-emerald-600/60 to-transparent mb-5"></div>
+                  <h2 class="text-3xl font-serif text-emerald-50 mb-2 tracking-wide drop-shadow-md">Serpiente</h2>
+                  <p class="text-emerald-400 text-[10px] tracking-[0.2em] uppercase font-bold">Segundo Año</p>
+                </div>
+              </div>
+
+              <!-- Carta 3er Año -->
+              <div onclick="setVistaActual('tercerAno', 'Temuco')" class="relative w-72 h-[480px] bg-gradient-to-b from-indigo-900/80 via-slate-900/85 to-blue-950/90 backdrop-blur-sm rounded-xl border border-red-500/50 flex flex-col items-center justify-between p-6 group cursor-pointer transition-all duration-500 hover:scale-105 hover:-translate-y-4 hover:shadow-[0_0_50px_rgba(220,38,38,0.4)] z-10 hover:z-20">
+                <div class="absolute inset-3 border border-red-600/30 rounded pointer-events-none group-hover:border-red-500/70 transition-colors duration-500">
+                   <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-red-700/60"></div>
+                   <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-red-700/60"></div>
+                   <div class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-red-700/60"></div>
+                   <div class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-red-700/60"></div>
+                </div>
+                
+                <div class="mt-6 text-red-500/90 font-serif text-3xl tracking-widest font-bold drop-shadow-md">III</div>
+                
+                <div class="text-9xl drop-shadow-[0_0_20px_rgba(220,38,38,0.2)] group-hover:scale-110 transition-transform duration-500 group-hover:drop-shadow-[0_0_40px_rgba(220,38,38,0.5)] grayscale group-hover:grayscale-0">🐉</div>
+                
+                <div class="text-center mb-8 w-full px-4">
+                  <div class="h-px w-full bg-gradient-to-r from-transparent via-red-600/60 to-transparent mb-5"></div>
+                  <h2 class="text-3xl font-serif text-red-50 mb-2 tracking-wide drop-shadow-md">Dragón</h2>
+                  <p class="text-red-400 text-xs tracking-[0.3em] uppercase font-bold">Tercer Año</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Inicializar la aplicación
+    render();
+  </script>
+</body>
+
 </html>
