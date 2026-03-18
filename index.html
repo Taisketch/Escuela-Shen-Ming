@@ -157,20 +157,20 @@
           clases[17] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Sebastián Reyes' };
           clases[24] = { tipo: 'Online', horario: '20:00 - 21:30 hrs', docente: 'Sebastián Reyes' };
         } else if (month >= 6 && month <= 11) {
-          const diasJueves = [];
+          const diasMiercoles = [];
           for (let i = 1; i <= diasEnMes; i++) {
             let fecha = new Date(year, month, i);
-            if (fecha.getDay() === 4) {
-              diasJueves.push(i);
+            if (fecha.getDay() === 3) {
+              diasMiercoles.push(i);
             }
           }
 
-          if (diasJueves.length >= 2) clases[diasJueves[1]] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
+          if (diasMiercoles.length >= 2) clases[diasMiercoles[1]] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
 
-          if (diasJueves.length >= 4) {
-            const diaCuartoJueves = diasJueves[3];
-            if (!(month === 11 && diaCuartoJueves === 24)) {
-              clases[diaCuartoJueves] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
+          if (diasMiercoles.length >= 4) {
+            const diaCuartoMiercoles = diasMiercoles[3];
+            if (!(month === 11 && diaCuartoMiercoles > 10)) {
+              clases[diaCuartoMiercoles] = { tipo: 'Online', horario: '08:00 - 09:30 hrs', docente: 'Adriana Perissé' };
             }
           }
         }
