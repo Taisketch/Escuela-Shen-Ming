@@ -116,10 +116,16 @@
         };
 
         if (curso === 'segundoAno' && year === 2026 && month >= 6 && month <= 10) {
+          const diasDeseados = {
+            6: [9, 23],
+            7: [13, 27],
+            8: [10, 24],
+            9: [15, 29],
+            10: [12, 26]
+          };
+          const diasMes = diasDeseados[month] || [];
           for (let i = 1; i <= diasEnMes; i++) {
-            let fecha = new Date(year, month, i);
-            if (fecha.getDay() === 4) {
-              if (month === 10 && i > 26) continue;
+            if (diasMes.includes(i)) {
               clases[i] = {
                 tipo: nombreClase,
                 horario: '20:00 - 21:30 hrs',
