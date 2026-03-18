@@ -115,7 +115,19 @@
           return claseBase;
         };
 
-        if (month === 3 && curso === 'primerAno') {
+        if (curso === 'segundoAno' && year === 2026 && month >= 6 && month <= 10) {
+          for (let i = 1; i <= diasEnMes; i++) {
+            let fecha = new Date(year, month, i);
+            if (fecha.getDay() === 4) {
+              if (month === 10 && i > 26) continue;
+              clases[i] = {
+                tipo: nombreClase,
+                horario: '20:00 - 21:30 hrs',
+                docente: 'Juan Pablo Massimono'
+              };
+            }
+          }
+        } else if (month === 3 && curso === 'primerAno') {
           clases[16] = crearClaseBase();
           clases[30] = crearClaseBase();
         } else {
